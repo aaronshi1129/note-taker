@@ -1,0 +1,663 @@
+<html>
+<head>
+  <title>Listening Note-taking</title>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-family: system-ui, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background-image: repeating-linear-gradient(
+        45deg,
+        #ffffff,
+        #ffffff 10px,
+        #f0f0f0 10px,
+        #f0f0f0 20px
+      );
+      min-height: 100vh;
+    }
+    
+    #notepad {
+      border: none;
+      margin: 0;
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      align-items: center;
+    }
+
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      color: black;
+      cursor: pointer;
+      font-size: 14px;
+      min-width: 140px;
+      transition: all 0.2s ease;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    #playBtn {
+      background: #95B8D1; 
+    }
+    #playBtn:hover {
+      background: #7a9bb4;
+    }
+
+    #clearBtn {
+      background: #B8E0D2; 
+    }
+    #clearBtn:hover {
+      background: #9bc3b5;
+    }
+
+    #addSentence {
+      background: #D6EADF; 
+    }
+    #addSentence:hover {
+      background: #b9cdc2;
+    }
+
+    #revealBtn {
+      background: #EAC4D5; 
+    }
+    #revealBtn:hover {
+      background: #cda7b8;
+    }
+
+    #listenAgainBtn {
+      background: #FFCBA4; 
+    }
+    #listenAgainBtn:hover {
+      background: #e2b287;
+    }
+
+    #exportBtn {
+      background: #DAB894; 
+    }
+    #exportBtn:hover {
+      background: #bd9b77;
+    }
+
+    .sentence {
+      padding: 20px;
+      background: #f0f0f0;
+      border-radius: 4px;
+      margin-bottom: 20px;
+      font-size: 1.2em;
+    }
+
+    #sentences {
+      margin: 20px 0;
+      max-height: 200px;
+      overflow-y: auto;
+      width: 100%;
+      display: none;
+    }
+
+    .sentence-item {
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .modal.show {
+      display: flex;
+    }
+
+    .modal-content {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      width: 80%;
+      max-width: 500px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      position: relative;
+      margin: auto;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    .modal textarea {
+      width: 100%;
+      height: 150px;
+      margin: 10px 0;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    .modal-buttons {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    #cancelAdd, #confirmAdd {
+      min-width: 100px;
+    }
+    
+    #cancelAdd {
+      background: #B8E0D2;
+    }
+    #cancelAdd:hover {
+      background: #9bc3b5;
+    }
+
+    #confirmAdd {
+      background: #95B8D1;
+    }
+    #confirmAdd:hover {
+      background: #7a9bb4;
+    }
+
+    .speed-control {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .bank-selector {
+      margin-right: 20px;
+    }
+
+    .top-controls {
+      display: flex;
+      width: 100%;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    
+    .countdown-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .countdown-number {
+      font-size: 120px;
+      color: white;
+      animation: pulse 1s ease-in-out;
+    }
+
+    @keyframes pulse {
+      0% {
+        transform: scale(0.3);
+        opacity: 0;
+      }
+      50% {
+        transform: scale(1.2);
+        opacity: 0.7;
+      }
+      100% {
+        transform: scale(1);
+        opacity: 0;
+      }
+    }
+
+    .color-picker {
+      display: flex;
+      gap: 10px;
+      margin-right: 20px;
+    }
+
+    .color-btn {
+      width: 30px;
+      height: 30px;
+      border: 2px solid #ccc;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .color-btn:hover {
+      transform: scale(1.1);
+    }
+
+    .color-btn.active {
+      border-color: #666;
+      transform: scale(1.1);
+    }
+
+    .color-btn.black { background: black; }
+    .color-btn.red { background: red; }
+    .color-btn.blue { background: blue; }
+
+    /* Update canvas container styles */
+    .canvas-container {
+      max-width: 700px;
+      height: 800px; 
+      overflow: auto; 
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      margin: 20px 0;
+      background: white;
+    }
+
+    /* Move buttons to be side by side */
+    .sentence-controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    /* Add styles for export button */
+    /* Hide current sentence by default */
+    #currentSentence {
+      display: none;
+    }
+
+    /* Add transition for smooth reveal */
+    .show {
+      display: block !important;
+      animation: fadeIn 0.3s;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    /* Add footer styles */
+    .footer {
+      margin-top: 40px;
+      padding: 20px;
+      text-align: center;
+      color: #666;
+      font-size: 14px;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div class="countdown-overlay">
+    <div class="countdown-number"></div>
+  </div>
+  <h1>Listening Note-taking</h1>
+  
+  <div class="top-controls">
+    <div class="bank-selector">
+      <label>
+        <input type="radio" name="bank" value="built-in" checked> Built-in Sentences
+      </label>
+      <label>
+        <input type="radio" name="bank" value="custom"> Custom Sentences
+      </label>
+    </div>
+    
+    <div class="speed-control">
+      <label for="speed">Speech Speed:</label>
+      <input type="range" id="speed" min="0.5" max="2" step="0.1" value="1">
+      <span id="speedValue">1.0x</span>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="color-picker">
+      <div class="color-btn black active" data-color="black"></div>
+      <div class="color-btn red" data-color="red"></div>
+      <div class="color-btn blue" data-color="blue"></div>
+    </div>
+    <button id="playBtn">Play Random Sentence</button>
+    <button id="clearBtn">Clear Canvas</button>
+    <button id="addSentence">Add New Sentences</button>
+  </div>
+
+  <div class="sentence-controls">
+    <button id="revealBtn">Reveal Sentence</button>
+    <button id="listenAgainBtn">Listen Again</button>
+    <button id="exportBtn">Export as Image</button>
+  </div>
+
+  <div id="currentSentence" class="sentence"></div>
+  
+  <div class="canvas-container">
+    <canvas id="notepad" width="600" height="1200"></canvas>
+  </div>
+  
+  <div id="sentences"></div>
+
+  <div id="addSentenceModal" class="modal">
+    <div class="modal-content">
+      <h2>Add New Sentences</h2>
+      <p>Enter one sentence per line:</p>
+      <textarea id="newSentences" placeholder="Enter sentences here..."></textarea>
+      <div class="modal-buttons">
+        <button id="cancelAdd">Cancel</button>
+        <button id="confirmAdd">Add Sentences</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    const canvas = document.getElementById('notepad');
+    const ctx = canvas.getContext('2d');
+    
+    function clearCanvas() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      drawCenterLine();
+    }
+
+    function drawCenterLine() {
+      ctx.save();
+      
+      ctx.strokeStyle = 'rgba(128, 128, 128, 0.3)';
+      ctx.lineWidth = 1;
+      
+      ctx.beginPath();
+      ctx.moveTo(canvas.width / 2, 0);
+      ctx.lineTo(canvas.width / 2, canvas.height);
+      ctx.stroke();
+      
+      ctx.restore();
+    }
+
+    clearCanvas();
+
+    let isDrawing = false;
+    let lastX = 0;
+    let lastY = 0;
+
+    ctx.strokeStyle = '#000';
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.lineWidth = 2;
+
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDrawing);
+    canvas.addEventListener('mouseout', stopDrawing);
+
+    function startDrawing(e) {
+      isDrawing = true;
+      [lastX, lastY] = [e.offsetX, e.offsetY];
+    }
+
+    function draw(e) {
+      if (!isDrawing) return;
+      ctx.beginPath();
+      ctx.moveTo(lastX, lastY);
+      ctx.lineTo(e.offsetX, e.offsetY);
+      ctx.stroke();
+      [lastX, lastY] = [e.offsetX, e.offsetY];
+    }
+
+    function stopDrawing() {
+      isDrawing = false;
+    }
+
+    const playBtn = document.getElementById('playBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const addSentenceBtn = document.getElementById('addSentence');
+    const currentSentenceDiv = document.getElementById('currentSentence');
+    const sentencesDiv = document.getElementById('sentences');
+
+    clearBtn.addEventListener('click', clearCanvas);
+
+    const speedControl = document.getElementById('speed');
+    const speedValue = document.getElementById('speedValue');
+    let currentSpeed = 1;
+
+    speedControl.addEventListener('input', (e) => {
+      currentSpeed = parseFloat(e.target.value);
+      speedValue.textContent = currentSpeed.toFixed(1) + 'x';
+    });
+
+    const bankRadios = document.getElementsByName('bank');
+    let currentBank = 'built-in';
+
+    bankRadios.forEach(radio => {
+      radio.addEventListener('change', (e) => {
+        currentBank = e.target.value;
+      });
+    });
+
+    const CUSTOM_SENTENCES_KEY = 'customSentences';
+    let customSentences = JSON.parse(localStorage.getItem(CUSTOM_SENTENCES_KEY) || '[]');
+
+    const modal = document.getElementById('addSentenceModal');
+    const textarea = document.getElementById('newSentences');
+    const cancelBtn = document.getElementById('cancelAdd');
+    const confirmBtn = document.getElementById('confirmAdd');
+
+    addSentenceBtn.addEventListener('click', () => {
+      modal.classList.add('show');
+    });
+
+    cancelBtn.addEventListener('click', () => {
+      modal.classList.remove('show');
+      textarea.value = '';
+    });
+
+    confirmBtn.addEventListener('click', () => {
+      const newSentences = textarea.value.split('\n')
+        .map(s => s.trim())
+        .filter(s => s.length > 0);
+
+      if (newSentences.length > 0) {
+        customSentences = [...customSentences, ...newSentences];
+        localStorage.setItem(CUSTOM_SENTENCES_KEY, JSON.stringify(customSentences));
+      }
+
+      modal.classList.remove('show');
+      textarea.value = '';
+    });
+
+    function speak(text) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = currentSpeed;
+      speechSynthesis.speak(utterance);
+    }
+
+    let builtInSentences = [];
+
+    function renderSentences() {
+      sentencesDiv.innerHTML = builtInSentences.map(sentence => `
+        <div class="sentence-item">
+          <span>${sentence}</span>
+          <button onclick="window.playThis('${sentence}')">Play</button>
+        </div>
+      `).join('');
+    }
+
+    playBtn.addEventListener('click', async () => {
+      const overlay = document.querySelector('.countdown-overlay');
+      const countdownNumber = document.querySelector('.countdown-number');
+      
+      overlay.style.display = 'flex';
+      
+      for (let i = 3; i > 0; i--) {
+        countdownNumber.textContent = i;
+        await new Promise(resolve => {
+          setTimeout(() => {
+            countdownNumber.style.animation = 'none';
+            countdownNumber.offsetHeight; 
+            countdownNumber.style.animation = null;
+            resolve();
+          }, 1000);
+        });
+      }
+      
+      overlay.style.display = 'none';
+      
+      let sentenceToPlay;
+      
+      if (currentBank === 'built-in') {
+        if (builtInSentences.length > 0) {
+          sentenceToPlay = builtInSentences[Math.floor(Math.random() * builtInSentences.length)];
+        }
+      } else {
+        if (customSentences.length > 0) {
+          sentenceToPlay = customSentences[Math.floor(Math.random() * customSentences.length)];
+        }
+      }
+
+      if (sentenceToPlay) {
+        currentSentenceDiv.textContent = sentenceToPlay;
+        currentSentenceDiv.classList.remove('show');
+        sentencesDiv.classList.remove('show');
+        revealBtn.textContent = 'Reveal Sentence';
+        speak(sentenceToPlay);
+      }
+    });
+
+    window.playThis = (text) => {
+      currentSentenceDiv.textContent = text;
+      currentSentenceDiv.classList.remove('show');
+      sentencesDiv.classList.remove('show');
+      revealBtn.textContent = 'Reveal Sentence';
+      speak(text);
+    };
+
+    const revealBtn = document.getElementById('revealBtn');
+    
+    revealBtn.addEventListener('click', () => {
+      const currentSentence = document.getElementById('currentSentence');
+      const sentencesList = document.getElementById('sentences');
+      
+      if (!currentSentence.classList.contains('show')) {
+        currentSentence.classList.add('show');
+        sentencesList.classList.add('show');
+        revealBtn.textContent = 'Hide Sentence';
+      } else {
+        currentSentence.classList.remove('show');
+        sentencesList.classList.remove('show');
+        revealBtn.textContent = 'Reveal Sentence';
+      }
+    });
+
+    const listenAgainBtn = document.getElementById('listenAgainBtn');
+    listenAgainBtn.addEventListener('click', () => {
+      const currentText = document.getElementById('currentSentence').textContent;
+      if (currentText) {
+        speak(currentText);
+      }
+    });
+
+    const colorBtns = document.querySelectorAll('.color-btn');
+    
+    colorBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        colorBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        ctx.strokeStyle = btn.dataset.color;
+      });
+    });
+
+    // Add export functionality
+    const exportBtn = document.getElementById('exportBtn');
+    
+    exportBtn.addEventListener('click', () => {
+      // Create a new canvas that will hold both the sentence and drawing
+      const exportCanvas = document.createElement('canvas');
+      const exportCtx = exportCanvas.getContext('2d');
+      
+      // Set dimensions for export canvas (original canvas size plus space for text)
+      exportCanvas.width = canvas.width;
+      exportCanvas.height = canvas.height + 100; // Extra space for text
+      
+      // Fill with white background
+      exportCtx.fillStyle = 'white';
+      exportCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+      
+      // Add the sentence at the top if it exists
+      const sentence = currentSentenceDiv.textContent;
+      if (sentence) {
+        exportCtx.font = '16px system-ui';
+        exportCtx.fillStyle = 'black';
+        
+        // Word wrap the sentence
+        const words = sentence.split(' ');
+        let line = '';
+        let y = 30;
+        const maxWidth = exportCanvas.width - 40;
+        const lineHeight = 24;
+        
+        exportCtx.textAlign = 'left';
+        exportCtx.textBaseline = 'top';
+        
+        words.forEach(word => {
+          const testLine = line + word + ' ';
+          const metrics = exportCtx.measureText(testLine);
+          
+          if (metrics.width > maxWidth) {
+            exportCtx.fillText(line, 20, y);
+            line = word + ' ';
+            y += lineHeight;
+          } else {
+            line = testLine;
+          }
+        });
+        exportCtx.fillText(line, 20, y);
+      }
+      
+      // Draw the original canvas content below the text
+      exportCtx.drawImage(canvas, 0, 100);
+      
+      // Create download link
+      const link = document.createElement('a');
+      link.download = 'note-taking.png';
+      link.href = exportCanvas.toDataURL('image/png');
+      link.click();
+    });
+
+    function initializeBuiltInSentences() {
+      builtInSentences = [
+        "According to the World Bank, the global poverty rate fell from 10.1% in 2015 to 9.2% in 2019.",
+        "In 2023, Japan's population was estimated at 124 million, down from 128 million in 2010.",
+        "The median household income in the United States in 2022 was approximately $68,700.",
+        "A study found that 65% of people prefer working remotely at least part of the time.",
+        "The average life expectancy in Taiwan increased from 77.2 years in 2000 to 80.9 years in 2020.",
+        "In 2021, 38% of small businesses reported a significant increase in online sales.",
+        "The literacy rate in Brazil rose to 93.2% in 2020, up from 90% in 2000.",
+        "Renewable energy sources accounted for 29% of global electricity production in 2021.",
+        "In 2019, 45% of consumers worldwide used mobile payment methods.",
+        "The average global temperature increased by 1.1°C since the late 19th century."
+      ];
+      renderSentences();
+    }
+
+    initializeBuiltInSentences();
+  </script>
+  
+  <div class="footer">
+    Author: Aaron Shi. Released in March 2025.
+  </div>
+</body>
+</html>
