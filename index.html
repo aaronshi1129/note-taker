@@ -155,11 +155,12 @@
 
     .modal-buttons {
       display: flex;
-      justify-content: flex-end;
+      justify-content: space-between;
       gap: 10px;
+      margin-top: 15px;
     }
 
-    #cancelAdd, #confirmAdd {
+    #cancelAdd, #confirmAdd, #eraseAll {
       min-width: 100px;
     }
     
@@ -175,6 +176,13 @@
     }
     #confirmAdd:hover {
       background: #7a9bb4;
+    }
+    
+    #eraseAll {
+      background: #EAC4D5;
+    }
+    #eraseAll:hover {
+      background: #d9a7b8;
     }
 
     .speed-control {
@@ -301,6 +309,21 @@
       font-size: 14px;
       width: 100%;
     }
+    
+    .custom-sentence-count {
+      font-size: 0.9em;
+      color: #666;
+      margin-top: 8px;
+      text-align: right;
+    }
+    
+.modal-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 15px;
+  width: 100%;
+}
   </style>
 </head>
 <body>
@@ -356,10 +379,14 @@
       <h2>Add New Sentences</h2>
       <p>Enter one sentence per line:</p>
       <textarea id="newSentences" placeholder="Enter sentences here..."></textarea>
-      <div class="modal-buttons">
-        <button id="cancelAdd">Cancel</button>
-        <button id="confirmAdd">Add Sentences</button>
-      </div>
+      
+      <div class="custom-sentence-count" id="sentenceCount"></div>
+      
+<div class="modal-actions">
+  <button id="eraseAll">Erase Custom Sentences</button>
+  <button id="cancelAdd">Cancel</button>
+  <button id="confirmAdd">Add Sentences</button>
+</div>
     </div>
   </div>
 
@@ -427,6 +454,7 @@
     const addSentenceBtn = document.getElementById('addSentence');
     const currentSentenceDiv = document.getElementById('currentSentence');
     const sentencesDiv = document.getElementById('sentences');
+    const sentenceCountDiv = document.getElementById('sentenceCount');
 
     clearBtn.addEventListener('click', clearCanvas);
 
@@ -445,6 +473,7 @@
     bankRadios.forEach(radio => {
       radio.addEventListener('change', (e) => {
         currentBank = e.target.value;
+        renderSentences(); // Re-render sentences when bank changes
       });
     });
 
@@ -455,8 +484,14 @@
     const textarea = document.getElementById('newSentences');
     const cancelBtn = document.getElementById('cancelAdd');
     const confirmBtn = document.getElementById('confirmAdd');
+    const eraseAllBtn = document.getElementById('eraseAll');
+
+    function updateSentenceCount() {
+      sentenceCountDiv.textContent = `Current custom sentences: ${customSentences.length}`;
+    }
 
     addSentenceBtn.addEventListener('click', () => {
+      updateSentenceCount();
       modal.classList.add('show');
     });
 
@@ -473,10 +508,36 @@
       if (newSentences.length > 0) {
         customSentences = [...customSentences, ...newSentences];
         localStorage.setItem(CUSTOM_SENTENCES_KEY, JSON.stringify(customSentences));
+        
+        // Switch to custom sentences bank after adding
+        document.querySelector('input[value="custom"]').checked = true;
+        currentBank = 'custom';
+        
+        // Refresh the displayed sentences
+        renderSentences();
       }
 
       modal.classList.remove('show');
       textarea.value = '';
+    });
+    
+    eraseAllBtn.addEventListener('click', () => {
+      if (customSentences.length === 0) {
+        alert("No custom sentences to erase.");
+        return;
+      }
+      
+      if (confirm("Are you sure you want to erase all custom sentences? This cannot be undone.")) {
+        customSentences = [];
+        localStorage.removeItem(CUSTOM_SENTENCES_KEY);
+        updateSentenceCount();
+        
+        if (currentBank === 'custom') {
+          renderSentences();
+        }
+        
+        alert("All custom sentences have been erased.");
+      }
     });
 
     function speak(text) {
@@ -488,12 +549,21 @@
     let builtInSentences = [];
 
     function renderSentences() {
-      sentencesDiv.innerHTML = builtInSentences.map(sentence => `
-        <div class="sentence-item">
-          <span>${sentence}</span>
-          <button onclick="window.playThis('${sentence}')">Play</button>
-        </div>
-      `).join('');
+      // Choose which sentence bank to display
+      const sentencesToDisplay = currentBank === 'built-in' ? builtInSentences : customSentences;
+      
+      // Create HTML for sentences
+      sentencesDiv.innerHTML = sentencesToDisplay.map(sentence => {
+        // Escape quotes in the sentence for the onclick attribute
+        const escapedSentence = sentence.replace(/"/g, '&quot;');
+        
+        return `
+          <div class="sentence-item">
+            <span>${sentence}</span>
+            <button onclick="window.playThis('${escapedSentence}')">Play</button>
+          </div>
+        `;
+      }).join('');
     }
 
     playBtn.addEventListener('click', async () => {
@@ -518,20 +588,20 @@
       
       let sentenceToPlay;
       
-      if (currentBank === 'built-in') {
-        if (builtInSentences.length > 0) {
-          sentenceToPlay = builtInSentences[Math.floor(Math.random() * builtInSentences.length)];
-        }
-      } else {
-        if (customSentences.length > 0) {
-          sentenceToPlay = customSentences[Math.floor(Math.random() * customSentences.length)];
-        }
+      // Get sentences from the current bank
+      const sentencesToUse = currentBank === 'built-in' ? builtInSentences : customSentences;
+      
+      if (sentencesToUse.length > 0) {
+        sentenceToPlay = sentencesToUse[Math.floor(Math.random() * sentencesToUse.length)];
+      } else if (currentBank === 'custom' && customSentences.length === 0) {
+        alert("No custom sentences available. Please add some sentences first.");
+        return;
       }
 
       if (sentenceToPlay) {
         currentSentenceDiv.textContent = sentenceToPlay;
         currentSentenceDiv.classList.remove('show');
-        sentencesDiv.classList.remove('show');
+        sentencesDiv.style.display = 'none';
         revealBtn.textContent = 'Reveal Sentence';
         speak(sentenceToPlay);
       }
@@ -540,7 +610,7 @@
     window.playThis = (text) => {
       currentSentenceDiv.textContent = text;
       currentSentenceDiv.classList.remove('show');
-      sentencesDiv.classList.remove('show');
+      sentencesDiv.style.display = 'none';
       revealBtn.textContent = 'Reveal Sentence';
       speak(text);
     };
@@ -553,11 +623,11 @@
       
       if (!currentSentence.classList.contains('show')) {
         currentSentence.classList.add('show');
-        sentencesList.classList.add('show');
+        sentencesList.style.display = 'block';
         revealBtn.textContent = 'Hide Sentence';
       } else {
         currentSentence.classList.remove('show');
-        sentencesList.classList.remove('show');
+        sentencesList.style.display = 'none';
         revealBtn.textContent = 'Reveal Sentence';
       }
     });
@@ -648,9 +718,24 @@
         "The literacy rate in Brazil rose to 93.2% in 2020, up from 90% in 2000.",
         "Renewable energy sources accounted for 29% of global electricity production in 2021.",
         "In 2019, 45% of consumers worldwide used mobile payment methods.",
-        "The average global temperature increased by 1.1°C since the late 19th century."
+        "The average global temperature increased by 1.1°C since the late 19th century.",
+    "In 2022, the global e-commerce market was valued at around $5.55 trillion.",
+    "The unemployment rate in the European Union dropped to 6.3% in 2021.",
+    "Around 54% of the world's population lives in urban areas as of 2020, according to the United Nations.",
+    "In the 2021-2022 academic year, 74% of high school students in the United States participated in extracurricular activities.",
+    "Approximately 90% of households in South Korea have high-speed internet access.",
+    "The number of electric vehicles on the road globally surpassed 10 million in 2020.",
+    "In 2021, 21% of all energy consumption in Germany came from renewable sources.",
+    "The average screen time for teenagers in the United States was 7.5 hours per day in 2022.",
+    "A study found that 85% of businesses believe that artificial intelligence will give them a competitive advantage.",
+    "The market share of smartphones with 5G capabilities reached 40% worldwide in 2023."
       ];
       renderSentences();
+    }
+
+    // Check if there are any custom sentences already in local storage
+    if (customSentences.length > 0) {
+      console.log(`Loaded ${customSentences.length} custom sentences from storage`);
     }
 
     initializeBuiltInSentences();
