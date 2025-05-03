@@ -1,775 +1,536 @@
-<html>
+
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <title>Listening Note-taking</title>
-  <style>
-    body {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      font-family: system-ui, sans-serif;
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 20px;
-      background-image: repeating-linear-gradient(
-        45deg,
-        #ffffff,
-        #ffffff 10px,
-        #f0f0f0 10px,
-        #f0f0f0 20px
-      );
-      min-height: 100vh;
-    }
-    
-    #notepad {
-      border: none;
-      margin: 0;
-    }
-
-    .controls {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
-      align-items: center;
-    }
-
-    button {
-      padding: 10px 20px;
-      border: none;
-      border-radius: 6px;
-      color: black;
-      cursor: pointer;
-      font-size: 14px;
-      min-width: 140px;
-      transition: all 0.2s ease;
-    }
-
-    button:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-
-    #playBtn {
-      background: #95B8D1; 
-    }
-    #playBtn:hover {
-      background: #7a9bb4;
-    }
-
-    #clearBtn {
-      background: #B8E0D2; 
-    }
-    #clearBtn:hover {
-      background: #9bc3b5;
-    }
-
-    #addSentence {
-      background: #D6EADF; 
-    }
-    #addSentence:hover {
-      background: #b9cdc2;
-    }
-
-    #revealBtn {
-      background: #EAC4D5; 
-    }
-    #revealBtn:hover {
-      background: #cda7b8;
-    }
-
-    #listenAgainBtn {
-      background: #FFCBA4; 
-    }
-    #listenAgainBtn:hover {
-      background: #e2b287;
-    }
-
-    #exportBtn {
-      background: #DAB894; 
-    }
-    #exportBtn:hover {
-      background: #bd9b77;
-    }
-
-    .sentence {
-      padding: 20px;
-      background: #f0f0f0;
-      border-radius: 4px;
-      margin-bottom: 20px;
-      font-size: 1.2em;
-    }
-
-    #sentences {
-      margin: 20px 0;
-      max-height: 200px;
-      overflow-y: auto;
-      width: 100%;
-      display: none;
-    }
-
-    .sentence-item {
-      padding: 10px;
-      border-bottom: 1px solid #eee;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .modal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.5);
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-    }
-
-    .modal.show {
-      display: flex;
-    }
-
-    .modal-content {
-      background: white;
-      padding: 20px;
-      border-radius: 8px;
-      width: 80%;
-      max-width: 500px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      position: relative;
-      margin: auto;
-      top: 50%;
-      transform: translateY(-50%);
-    }
-
-    .modal textarea {
-      width: 100%;
-      height: 150px;
-      margin: 10px 0;
-      padding: 8px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
-
-    .modal-buttons {
-      display: flex;
-      justify-content: space-between;
-      gap: 10px;
-      margin-top: 15px;
-    }
-
-    #cancelAdd, #confirmAdd, #eraseAll {
-      min-width: 100px;
-    }
-    
-    #cancelAdd {
-      background: #B8E0D2;
-    }
-    #cancelAdd:hover {
-      background: #9bc3b5;
-    }
-
-    #confirmAdd {
-      background: #95B8D1;
-    }
-    #confirmAdd:hover {
-      background: #7a9bb4;
-    }
-    
-    #eraseAll {
-      background: #EAC4D5;
-    }
-    #eraseAll:hover {
-      background: #d9a7b8;
-    }
-
-    .speed-control {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .bank-selector {
-      margin-right: 20px;
-    }
-
-    .top-controls {
-      display: flex;
-      width: 100%;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-    
-    .countdown-overlay {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.7);
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-    }
-
-    .countdown-number {
-      font-size: 120px;
-      color: white;
-      animation: pulse 1s ease-in-out;
-    }
-
-    @keyframes pulse {
-      0% {
-        transform: scale(0.3);
-        opacity: 0;
-      }
-      50% {
-        transform: scale(1.2);
-        opacity: 0.7;
-      }
-      100% {
-        transform: scale(1);
-        opacity: 0;
-      }
-    }
-
-    .color-picker {
-      display: flex;
-      gap: 10px;
-      margin-right: 20px;
-    }
-
-    .color-btn {
-      width: 30px;
-      height: 30px;
-      border: 2px solid #ccc;
-      border-radius: 50%;
-      cursor: pointer;
-      transition: transform 0.2s;
-    }
-
-    .color-btn:hover {
-      transform: scale(1.1);
-    }
-
-    .color-btn.active {
-      border-color: #666;
-      transform: scale(1.1);
-    }
-
-    .color-btn.black { background: black; }
-    .color-btn.red { background: red; }
-    .color-btn.blue { background: blue; }
-
-    /* Update canvas container styles */
-    .canvas-container {
-      max-width: 700px;
-      height: 1200px; 
-      overflow: auto; 
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      margin: 20px 0;
-      background: white;
-    }
-
-    /* Move buttons to be side by side */
-    .sentence-controls {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-
-    /* Add styles for export button */
-    /* Hide current sentence by default */
-    #currentSentence {
-      display: none;
-    }
-
-    /* Add transition for smooth reveal */
-    .show {
-      display: block !important;
-      animation: fadeIn 0.3s;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-    
-    /* Add footer styles */
-    .footer {
-      margin-top: 40px;
-      padding: 20px;
-      text-align: center;
-      color: #666;
-      font-size: 14px;
-      width: 100%;
-    }
-    
-    .custom-sentence-count {
-      font-size: 0.9em;
-      color: #666;
-      margin-top: 8px;
-      text-align: right;
-    }
-    
-.modal-actions {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  margin-top: 15px;
-  width: 100%;
-}
-  </style>
-</head>
-<body>
-  <div class="countdown-overlay">
-    <div class="countdown-number"></div>
-  </div>
-  <h1>Listening Note-taking</h1>
-  
-  <div class="top-controls">
-    <div class="bank-selector">
-      <label>
-        <input type="radio" name="bank" value="built-in" checked> Built-in Sentences
-      </label>
-      <label>
-        <input type="radio" name="bank" value="custom"> Custom Sentences
-      </label>
-    </div>
-    
-    <div class="speed-control">
-      <label for="speed">Speech Speed:</label>
-      <input type="range" id="speed" min="0.5" max="2" step="0.1" value="1">
-      <span id="speedValue">1.0x</span>
-    </div>
-  </div>
-
-  <div class="controls">
-    <div class="color-picker">
-      <div class="color-btn black active" data-color="black"></div>
-      <div class="color-btn red" data-color="red"></div>
-      <div class="color-btn blue" data-color="blue"></div>
-    </div>
-    <button id="playBtn">Play Random Sentence</button>
-    <button id="clearBtn">Clear Canvas</button>
-    <button id="addSentence">Add New Sentences</button>
-  </div>
-
-  <div class="sentence-controls">
-    <button id="revealBtn">Reveal Sentence</button>
-    <button id="listenAgainBtn">Listen Again</button>
-    <button id="exportBtn">Export as Image</button>
-  </div>
-
-  <div id="currentSentence" class="sentence"></div>
-  
-  <div class="canvas-container">
-    <canvas id="notepad" width="600" height="1200"></canvas>
-  </div>
-  
-  <div id="sentences"></div>
-
-  <div id="addSentenceModal" class="modal">
-    <div class="modal-content">
-      <h2>Add New Sentences</h2>
-      <p>Enter one sentence per line:</p>
-      <textarea id="newSentences" placeholder="Enter sentences here..."></textarea>
-      
-      <div class="custom-sentence-count" id="sentenceCount"></div>
-      
-<div class="modal-actions">
-  <button id="eraseAll">Erase Custom Sentences</button>
-  <button id="cancelAdd">Cancel</button>
-  <button id="confirmAdd">Add Sentences</button>
-</div>
-    </div>
-  </div>
-
-  <script type="module">
-    const canvas = document.getElementById('notepad');
-    const ctx = canvas.getContext('2d');
-    
-    function clearCanvas() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = 'white';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      drawCenterLine();
-    }
-
-    function drawCenterLine() {
-      ctx.save();
-      
-      ctx.strokeStyle = 'rgba(128, 128, 128, 0.3)';
-      ctx.lineWidth = 1;
-      
-      ctx.beginPath();
-      ctx.moveTo(canvas.width / 2, 0);
-      ctx.lineTo(canvas.width / 2, canvas.height);
-      ctx.stroke();
-      
-      ctx.restore();
-    }
-
-    clearCanvas();
-
-let isDrawing = false;
-let lastX = 0;
-let lastY = 0;
-
-ctx.strokeStyle = '#000';
-ctx.lineJoin = 'round';
-ctx.lineCap = 'round';
-ctx.lineWidth = 2;
-
-// Mouse event listeners
-canvas.addEventListener('mousedown', startDrawing);
-canvas.addEventListener('mousemove', draw);
-canvas.addEventListener('mouseup', stopDrawing);
-canvas.addEventListener('mouseout', stopDrawing);
-
-// Touch event listeners
-canvas.addEventListener('touchstart', startDrawingTouch);
-canvas.addEventListener('touchmove', drawTouch);
-canvas.addEventListener('touchend', stopDrawing);
-
-function startDrawing(e) {
-  isDrawing = true;
-  [lastX, lastY] = [e.offsetX, e.offsetY];
-}
-
-function startDrawingTouch(e) {
-  isDrawing = true;
-  const touch = e.touches[0];
-  const rect = canvas.getBoundingClientRect();
-  [lastX, lastY] = [touch.clientX - rect.left, touch.clientY - rect.top];
-}
-
-function draw(e) {
-  if (!isDrawing) return;
-  ctx.beginPath();
-  ctx.moveTo(lastX, lastY);
-  ctx.lineTo(e.offsetX, e.offsetY);
-  ctx.stroke();
-  [lastX, lastY] = [e.offsetX, e.offsetY];
-}
-
-function drawTouch(e) {
-  if (!isDrawing) return;
-  const touch = e.touches[0];
-  const rect = canvas.getBoundingClientRect();
-  const x = touch.clientX - rect.left;
-  const y = touch.clientY - rect.top;
-  
-  ctx.beginPath();
-  ctx.moveTo(lastX, lastY);
-  ctx.lineTo(x, y);
-  ctx.stroke();
-  [lastX, lastY] = [x, y];
-}
-
-function stopDrawing() {
-  isDrawing = false;
-}
-
-    const playBtn = document.getElementById('playBtn');
-    const clearBtn = document.getElementById('clearBtn');
-    const addSentenceBtn = document.getElementById('addSentence');
-    const currentSentenceDiv = document.getElementById('currentSentence');
-    const sentencesDiv = document.getElementById('sentences');
-    const sentenceCountDiv = document.getElementById('sentenceCount');
-
-    clearBtn.addEventListener('click', clearCanvas);
-
-    const speedControl = document.getElementById('speed');
-    const speedValue = document.getElementById('speedValue');
-    let currentSpeed = 1;
-
-    speedControl.addEventListener('input', (e) => {
-      currentSpeed = parseFloat(e.target.value);
-      speedValue.textContent = currentSpeed.toFixed(1) + 'x';
-    });
-
-    const bankRadios = document.getElementsByName('bank');
-    let currentBank = 'built-in';
-
-    bankRadios.forEach(radio => {
-      radio.addEventListener('change', (e) => {
-        currentBank = e.target.value;
-        renderSentences(); // Re-render sentences when bank changes
-      });
-    });
-
-    const CUSTOM_SENTENCES_KEY = 'customSentences';
-    let customSentences = JSON.parse(localStorage.getItem(CUSTOM_SENTENCES_KEY) || '[]');
-
-    const modal = document.getElementById('addSentenceModal');
-    const textarea = document.getElementById('newSentences');
-    const cancelBtn = document.getElementById('cancelAdd');
-    const confirmBtn = document.getElementById('confirmAdd');
-    const eraseAllBtn = document.getElementById('eraseAll');
-
-    function updateSentenceCount() {
-      sentenceCountDiv.textContent = `Current custom sentences: ${customSentences.length}`;
-    }
-
-    addSentenceBtn.addEventListener('click', () => {
-      updateSentenceCount();
-      modal.classList.add('show');
-    });
-
-    cancelBtn.addEventListener('click', () => {
-      modal.classList.remove('show');
-      textarea.value = '';
-    });
-
-    confirmBtn.addEventListener('click', () => {
-      const newSentences = textarea.value.split('\n')
-        .map(s => s.trim())
-        .filter(s => s.length > 0);
-
-      if (newSentences.length > 0) {
-        customSentences = [...customSentences, ...newSentences];
-        localStorage.setItem(CUSTOM_SENTENCES_KEY, JSON.stringify(customSentences));
-        
-        // Switch to custom sentences bank after adding
-        document.querySelector('input[value="custom"]').checked = true;
-        currentBank = 'custom';
-        
-        // Refresh the displayed sentences
-        renderSentences();
-      }
-
-      modal.classList.remove('show');
-      textarea.value = '';
-    });
-    
-    eraseAllBtn.addEventListener('click', () => {
-      if (customSentences.length === 0) {
-        alert("No custom sentences to erase.");
-        return;
-      }
-      
-      if (confirm("Are you sure you want to erase all custom sentences? This cannot be undone.")) {
-        customSentences = [];
-        localStorage.removeItem(CUSTOM_SENTENCES_KEY);
-        updateSentenceCount();
-        
-        if (currentBank === 'custom') {
-          renderSentences();
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dictation Practice Canvas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f4f8;
+            overflow-x: hidden;
         }
         
-        alert("All custom sentences have been erased.");
-      }
-    });
-
-    function speak(text) {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = currentSpeed;
-      speechSynthesis.speak(utterance);
-    }
-
-    let builtInSentences = [];
-
-    function renderSentences() {
-      // Choose which sentence bank to display
-      const sentencesToDisplay = currentBank === 'built-in' ? builtInSentences : customSentences;
-      
-      // Create HTML for sentences
-      sentencesDiv.innerHTML = sentencesToDisplay.map(sentence => {
-        // Escape quotes in the sentence for the onclick attribute
-        const escapedSentence = sentence.replace(/"/g, '&quot;');
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            height: calc(100vh - 180px);
+            overflow: auto;
+            background-color: white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
         
-        return `
-          <div class="sentence-item">
-            <span>${sentence}</span>
-            <button onclick="window.playThis('${escapedSentence}')">Play</button>
-          </div>
-        `;
-      }).join('');
-    }
+        #drawingCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            cursor: crosshair;
+            background-color: white;
+        }
+        
+        .center-line {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            height: 100%;
+            width: 1px;
+            background-color: rgba(0, 0, 0, 0.2);
+            pointer-events: none;
+        }
+        
+        .countdown {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 120px;
+            font-weight: bold;
+            color: #3b82f6;
+            opacity: 0;
+            z-index: 100;
+            text-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+        }
+        
+        @keyframes countdown {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+            20% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+            80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .pen-color.active {
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="min-h-screen flex flex-col">
+        <header class="bg-blue-600 text-white p-4">
+            <div class="container mx-auto flex flex-col md:flex-row justify-between items-center">
+                <h1 class="text-2xl font-bold mb-2 md:mb-0">Dictation Practice</h1>
+                <div class="flex flex-wrap gap-2">
+                    <button id="revealBtn" class="bg-white text-blue-600 px-4 py-2 rounded hover:bg-blue-100 transition">Reveal Sentence</button>
+                    <button id="listenAgainBtn" class="bg-white text-blue-600 px-4 py-2 rounded hover:bg-blue-100 transition">Listen Again</button>
+                    <button id="exportBtn" class="bg-white text-blue-600 px-4 py-2 rounded hover:bg-blue-100 transition">Export Image</button>
+                </div>
+            </div>
+        </header>
+        
+        <div class="container mx-auto p-4 flex-grow flex flex-col">
+            <div class="bg-white rounded-lg p-4 mb-4 shadow">
+                <div class="flex flex-wrap gap-3 justify-between items-center">
+                    <div class="flex gap-2">
+                        <button id="playBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
+                            Play Random Sentence
+                        </button>
+                        <select id="sentenceBank" class="border rounded px-3 py-2">
+                            <option value="built-in">Built-in Sentences</option>
+                            <option value="custom">Custom Sentences</option>
+                        </select>
+                        <button id="addSentenceBtn" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition">
+                            Add New Sentence
+                        </button>
+                    </div>
+                    
+                    <div class="flex items-center gap-3">
+                        <div class="flex items-center">
+                            <label for="speedRange" class="mr-2">Speed:</label>
+                            <input type="range" id="speedRange" min="0.5" max="2" step="0.1" value="1" class="w-24">
+                            <span id="speedValue" class="ml-2">1.0x</span>
+                        </div>
+                        
+                        <div class="flex items-center">
+                            <label class="mr-2">Pen:</label>
+                            <div class="flex gap-1">
+                                <button class="pen-color w-6 h-6 rounded-full bg-black border border-gray-300 active" data-color="black"></button>
+                                <button class="pen-color w-6 h-6 rounded-full bg-red-600 border border-gray-300" data-color="red"></button>
+                                <button class="pen-color w-6 h-6 rounded-full bg-blue-600 border border-gray-300" data-color="blue"></button>
+                            </div>
+                        </div>
+                        
+                        <button id="clearBtn" class="bg-gray-200 text-gray-700 px-3 py-1 rounded hover:bg-gray-300 transition">
+                            Clear Canvas
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="currentSentence" class="bg-blue-100 p-3 rounded-lg mb-4 text-center hidden"></div>
+            
+            <div class="canvas-container rounded-lg flex-grow">
+                <canvas id="drawingCanvas"></canvas>
+                <div class="center-line"></div>
+            </div>
+            
+            <div class="text-right text-sm text-gray-500 mt-2">Created by Aaron Shi.</div>
+        </div>
+    </div>
+    
+    <div id="countdownDisplay" class="countdown">3</div>
+    
+    <div id="addSentenceModal" class="modal">
+        <div class="modal-content">
+            <h2 class="text-xl font-bold mb-4">Add New Sentence</h2>
+            <textarea id="newSentence" class="w-full border rounded p-2 mb-4" rows="4" placeholder="Enter your sentence here..."></textarea>
+            <div class="flex justify-end gap-2">
+                <button id="cancelAddSentence" class="px-4 py-2 border rounded hover:bg-gray-100 transition">Cancel</button>
+                <button id="confirmAddSentence" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">Add Sentence</button>
+            </div>
+        </div>
+    </div>
 
-    playBtn.addEventListener('click', async () => {
-      const overlay = document.querySelector('.countdown-overlay');
-      const countdownNumber = document.querySelector('.countdown-number');
-      
-      overlay.style.display = 'flex';
-      
-      for (let i = 3; i > 0; i--) {
-        countdownNumber.textContent = i;
-        await new Promise(resolve => {
-          setTimeout(() => {
-            countdownNumber.style.animation = 'none';
-            countdownNumber.offsetHeight; 
-            countdownNumber.style.animation = null;
-            resolve();
-          }, 1000);
+    <script>
+        // Initialize variables
+        let currentSentence = "";
+        let isDrawing = false;
+        let currentColor = "black";
+        let lastX = 0;
+        let lastY = 0;
+        let canvasHeight = 2000; // Initial height
+        let dpr = window.devicePixelRatio || 1; // Device pixel ratio for high-DPI screens
+        
+        // Built-in sentences
+        const builtInSentences = [
+            "The quick brown fox jumps over the lazy dog.",
+            "She sells seashells by the seashore.",
+            "How much wood would a woodchuck chuck if a woodchuck could chuck wood?",
+            "Peter Piper picked a peck of pickled peppers.",
+            "All that glitters is not gold.",
+            "The early bird catches the worm.",
+            "Actions speak louder than words.",
+            "A journey of a thousand miles begins with a single step.",
+            "Don't count your chickens before they hatch.",
+            "The pen is mightier than the sword."
+        ];
+        
+        // Custom sentences (from local storage)
+        let customSentences = JSON.parse(localStorage.getItem('customSentences')) || [];
+        
+        // DOM elements
+        const canvas = document.getElementById('drawingCanvas');
+        const ctx = canvas.getContext('2d');
+        const canvasContainer = document.querySelector('.canvas-container');
+        const currentSentenceDisplay = document.getElementById('currentSentence');
+        const countdownDisplay = document.getElementById('countdownDisplay');
+        const speedRange = document.getElementById('speedRange');
+        const speedValue = document.getElementById('speedValue');
+        const sentenceBank = document.getElementById('sentenceBank');
+        const addSentenceModal = document.getElementById('addSentenceModal');
+        
+        // Set up canvas with proper scaling for high-DPI displays
+        function setupCanvas() {
+            // Get the container's display size
+            const displayWidth = canvasContainer.clientWidth;
+            const displayHeight = canvasHeight;
+            
+            // Set canvas size in pixels, accounting for device pixel ratio
+            canvas.width = displayWidth * dpr;
+            canvas.height = displayHeight * dpr;
+            
+            // Scale the canvas for high-DPI displays
+            ctx.scale(dpr, dpr);
+            
+            // Set the canvas CSS size to match the container
+            canvas.style.width = `${displayWidth}px`;
+            canvas.style.height = `${displayHeight}px`;
+            
+            // Set line style
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = currentColor;
+            
+            // Draw center line
+            document.querySelector('.center-line').style.height = canvasHeight + 'px';
+        }
+        
+        // Initialize canvas
+        setupCanvas();
+        window.addEventListener('resize', setupCanvas);
+        
+        // Drawing functions
+        function startDrawing(e) {
+            isDrawing = true;
+            [lastX, lastY] = getCoordinates(e);
+        }
+        
+        function draw(e) {
+            if (!isDrawing) return;
+            
+            e.preventDefault();
+            
+            const [x, y] = getCoordinates(e);
+            
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            
+            [lastX, lastY] = [x, y];
+            
+            // Extend canvas if needed
+            if (y > canvasHeight - 200) {
+                extendCanvas();
+            }
+        }
+        
+        function stopDrawing() {
+            isDrawing = false;
+        }
+        
+        // Extend canvas height when needed
+        function extendCanvas() {
+            const oldHeight = canvasHeight;
+            canvasHeight += 500;
+            
+            // Save current drawing
+            const imageData = ctx.getImageData(0, 0, canvas.width / dpr, oldHeight);
+            
+            // Resize canvas
+            canvas.height = canvasHeight * dpr;
+            
+            // Scale again after resize
+            ctx.scale(dpr, dpr);
+            
+            // Restore drawing
+            ctx.putImageData(imageData, 0, 0);
+            
+            // Reset context properties after resize
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = currentColor;
+            
+            // Update center line
+            document.querySelector('.center-line').style.height = canvasHeight + 'px';
+        }
+        
+        // Get accurate coordinates for drawing
+        function getCoordinates(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scrollTop = canvasContainer.scrollTop;
+            
+            if (e.type.includes('touch')) {
+                return [
+                    e.touches[0].clientX - rect.left,
+                    e.touches[0].clientY - rect.top + scrollTop
+                ];
+            } else {
+                return [
+                    e.clientX - rect.left,
+                    e.clientY - rect.top + scrollTop
+                ];
+            }
+        }
+        
+        // Add event listeners for drawing
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+        
+        // Touch support
+        canvas.addEventListener('touchstart', startDrawing);
+        canvas.addEventListener('touchmove', draw);
+        canvas.addEventListener('touchend', stopDrawing);
+        
+        // TTS functions
+        function playTTS(text, rate = 1.0) {
+            if (!window.speechSynthesis) {
+                alert("Sorry, your browser doesn't support text-to-speech!");
+                return;
+            }
+            
+            // Cancel any ongoing speech
+            window.speechSynthesis.cancel();
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = rate;
+            window.speechSynthesis.speak(utterance);
+        }
+        
+        // Get random sentence
+        function getRandomSentence() {
+            const bank = sentenceBank.value === 'built-in' ? builtInSentences : customSentences;
+            
+            if (bank.length === 0) {
+                return "No sentences available in this bank. Please add some or switch banks.";
+            }
+            
+            const randomIndex = Math.floor(Math.random() * bank.length);
+            return bank[randomIndex];
+        }
+        
+        // Play button click handler with countdown
+        document.getElementById('playBtn').addEventListener('click', () => {
+            currentSentence = getRandomSentence();
+            currentSentenceDisplay.classList.add('hidden');
+            
+            // Start countdown animation
+            let count = 3;
+            countdownDisplay.textContent = count;
+            countdownDisplay.style.animation = 'none';
+            
+            const countdownInterval = setInterval(() => {
+                count--;
+                
+                if (count > 0) {
+                    countdownDisplay.textContent = count;
+                    countdownDisplay.style.animation = 'none';
+                    void countdownDisplay.offsetWidth; // Trigger reflow
+                    countdownDisplay.style.animation = 'countdown 1s forwards';
+                } else {
+                    clearInterval(countdownInterval);
+                    countdownDisplay.textContent = "Go!";
+                    countdownDisplay.style.animation = 'none';
+                    void countdownDisplay.offsetWidth; // Trigger reflow
+                    countdownDisplay.style.animation = 'countdown 1s forwards';
+                    
+                    // Play the sentence after countdown
+                    setTimeout(() => {
+                        const rate = parseFloat(speedRange.value);
+                        playTTS(currentSentence, rate);
+                    }, 500);
+                }
+            }, 1000);
+            
+            countdownDisplay.style.animation = 'none';
+            void countdownDisplay.offsetWidth; // Trigger reflow
+            countdownDisplay.style.animation = 'countdown 1s forwards';
         });
-      }
-      
-      overlay.style.display = 'none';
-      
-      let sentenceToPlay;
-      
-      // Get sentences from the current bank
-      const sentencesToUse = currentBank === 'built-in' ? builtInSentences : customSentences;
-      
-      if (sentencesToUse.length > 0) {
-        sentenceToPlay = sentencesToUse[Math.floor(Math.random() * sentencesToUse.length)];
-      } else if (currentBank === 'custom' && customSentences.length === 0) {
-        alert("No custom sentences available. Please add some sentences first.");
-        return;
-      }
-
-      if (sentenceToPlay) {
-        currentSentenceDiv.textContent = sentenceToPlay;
-        currentSentenceDiv.classList.remove('show');
-        sentencesDiv.style.display = 'none';
-        revealBtn.textContent = 'Reveal Sentence';
-        speak(sentenceToPlay);
-      }
-    });
-
-    window.playThis = (text) => {
-      currentSentenceDiv.textContent = text;
-      currentSentenceDiv.classList.remove('show');
-      sentencesDiv.style.display = 'none';
-      revealBtn.textContent = 'Reveal Sentence';
-      speak(text);
-    };
-
-    const revealBtn = document.getElementById('revealBtn');
-    
-    revealBtn.addEventListener('click', () => {
-      const currentSentence = document.getElementById('currentSentence');
-      const sentencesList = document.getElementById('sentences');
-      
-      if (!currentSentence.classList.contains('show')) {
-        currentSentence.classList.add('show');
-        sentencesList.style.display = 'block';
-        revealBtn.textContent = 'Hide Sentence';
-      } else {
-        currentSentence.classList.remove('show');
-        sentencesList.style.display = 'none';
-        revealBtn.textContent = 'Reveal Sentence';
-      }
-    });
-
-    const listenAgainBtn = document.getElementById('listenAgainBtn');
-    listenAgainBtn.addEventListener('click', () => {
-      const currentText = document.getElementById('currentSentence').textContent;
-      if (currentText) {
-        speak(currentText);
-      }
-    });
-
-    const colorBtns = document.querySelectorAll('.color-btn');
-    
-    colorBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        colorBtns.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        ctx.strokeStyle = btn.dataset.color;
-      });
-    });
-
-    // Add export functionality
-    const exportBtn = document.getElementById('exportBtn');
-    
-    exportBtn.addEventListener('click', () => {
-      // Create a new canvas that will hold both the sentence and drawing
-      const exportCanvas = document.createElement('canvas');
-      const exportCtx = exportCanvas.getContext('2d');
-      
-      // Set dimensions for export canvas (original canvas size plus space for text)
-      exportCanvas.width = canvas.width;
-      exportCanvas.height = canvas.height + 100; // Extra space for text
-      
-      // Fill with white background
-      exportCtx.fillStyle = 'white';
-      exportCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
-      
-      // Add the sentence at the top if it exists
-      const sentence = currentSentenceDiv.textContent;
-      if (sentence) {
-        exportCtx.font = '16px system-ui';
-        exportCtx.fillStyle = 'black';
         
-        // Word wrap the sentence
-        const words = sentence.split(' ');
-        let line = '';
-        let y = 30;
-        const maxWidth = exportCanvas.width - 40;
-        const lineHeight = 24;
-        
-        exportCtx.textAlign = 'left';
-        exportCtx.textBaseline = 'top';
-        
-        words.forEach(word => {
-          const testLine = line + word + ' ';
-          const metrics = exportCtx.measureText(testLine);
-          
-          if (metrics.width > maxWidth) {
-            exportCtx.fillText(line, 20, y);
-            line = word + ' ';
-            y += lineHeight;
-          } else {
-            line = testLine;
-          }
+        // Reveal button click handler
+        document.getElementById('revealBtn').addEventListener('click', () => {
+            if (currentSentence) {
+                currentSentenceDisplay.textContent = currentSentence;
+                currentSentenceDisplay.classList.remove('hidden');
+            } else {
+                alert("Please play a sentence first!");
+            }
         });
-        exportCtx.fillText(line, 20, y);
-      }
-      
-      // Draw the original canvas content below the text
-      exportCtx.drawImage(canvas, 0, 100);
-      
-      // Create download link
-      const link = document.createElement('a');
-      link.download = 'note-taking.png';
-      link.href = exportCanvas.toDataURL('image/png');
-      link.click();
-    });
-
-    function initializeBuiltInSentences() {
-      builtInSentences = [
-        "According to the World Bank, the global poverty rate fell from 10.1% in 2015 to 9.2% in 2019.",
-        "In 2023, Japan's population was estimated at 124 million, down from 128 million in 2010.",
-        "The median household income in the United States in 2022 was approximately $68,700.",
-        "A study found that 65% of people prefer working remotely at least part of the time.",
-        "The average life expectancy in Taiwan increased from 77.2 years in 2000 to 80.9 years in 2020.",
-        "In 2021, 38% of small businesses reported a significant increase in online sales.",
-        "The literacy rate in Brazil rose to 93.2% in 2020, up from 90% in 2000.",
-        "Renewable energy sources accounted for 29% of global electricity production in 2021.",
-        "In 2019, 45% of consumers worldwide used mobile payment methods.",
-        "The average global temperature increased by 1.1°C since the late 19th century.",
-    "In 2022, the global e-commerce market was valued at around $5.55 trillion.",
-    "The unemployment rate in the European Union dropped to 6.3% in 2021.",
-    "Around 54% of the world's population lives in urban areas as of 2020, according to the United Nations.",
-    "In the 2021-2022 academic year, 74% of high school students in the United States participated in extracurricular activities.",
-    "Approximately 90% of households in South Korea have high-speed internet access.",
-    "The number of electric vehicles on the road globally surpassed 10 million in 2020.",
-    "In 2021, 21% of all energy consumption in Germany came from renewable sources.",
-    "The average screen time for teenagers in the United States was 7.5 hours per day in 2022.",
-    "A study found that 85% of businesses believe that artificial intelligence will give them a competitive advantage.",
-    "The market share of smartphones with 5G capabilities reached 40% worldwide in 2023."
-      ];
-      renderSentences();
-    }
-
-    // Check if there are any custom sentences already in local storage
-    if (customSentences.length > 0) {
-      console.log(`Loaded ${customSentences.length} custom sentences from storage`);
-    }
-
-    initializeBuiltInSentences();
-  </script>
-  
-  <div class="footer">
-    Author: Aaron Shi. Released in March 2025.
-  </div>
-</body>
+        
+        // Listen again button click handler
+        document.getElementById('listenAgainBtn').addEventListener('click', () => {
+            if (currentSentence) {
+                const rate = parseFloat(speedRange.value);
+                playTTS(currentSentence, rate);
+            } else {
+                alert("Please play a sentence first!");
+            }
+        });
+        
+        // Speed range input handler
+        speedRange.addEventListener('input', () => {
+            const rate = parseFloat(speedRange.value);
+            speedValue.textContent = rate.toFixed(1) + 'x';
+        });
+        
+        // Clear canvas button
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        });
+        
+        // Pen color selection
+        document.querySelectorAll('.pen-color').forEach(button => {
+            button.addEventListener('click', () => {
+                currentColor = button.dataset.color;
+                ctx.strokeStyle = currentColor;
+                
+                // Update active state
+                document.querySelectorAll('.pen-color').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                button.classList.add('active');
+            });
+        });
+        
+        // Add sentence modal handlers
+        document.getElementById('addSentenceBtn').addEventListener('click', () => {
+            addSentenceModal.style.display = 'flex';
+        });
+        
+        document.getElementById('cancelAddSentence').addEventListener('click', () => {
+            addSentenceModal.style.display = 'none';
+        });
+        
+        document.getElementById('confirmAddSentence').addEventListener('click', () => {
+            const newSentence = document.getElementById('newSentence').value.trim();
+            
+            if (newSentence) {
+                customSentences.push(newSentence);
+                localStorage.setItem('customSentences', JSON.stringify(customSentences));
+                document.getElementById('newSentence').value = '';
+                addSentenceModal.style.display = 'none';
+                
+                // Switch to custom bank
+                sentenceBank.value = 'custom';
+            } else {
+                alert("Please enter a sentence!");
+            }
+        });
+        
+        // Export canvas as image
+        document.getElementById('exportBtn').addEventListener('click', () => {
+            if (!currentSentence) {
+                alert("Please play a sentence first!");
+                return;
+            }
+            
+            // Create a temporary canvas for the export
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            
+            // Set dimensions
+            const visibleHeight = Math.min(canvasHeight, 2000); // Limit export height
+            tempCanvas.width = canvas.width / dpr;
+            tempCanvas.height = visibleHeight + 60; // Extra space for the sentence
+            
+            // Fill background
+            tempCtx.fillStyle = 'white';
+            tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+            
+            // Add sentence at the top
+            tempCtx.fillStyle = 'black';
+            tempCtx.font = '16px Arial';
+            tempCtx.textAlign = 'center';
+            
+            // Handle long sentences with wrapping
+            const maxWidth = tempCanvas.width - 40;
+            const words = currentSentence.split(' ');
+            let line = '';
+            let y = 30;
+            
+            for (let i = 0; i < words.length; i++) {
+                const testLine = line + words[i] + ' ';
+                const metrics = tempCtx.measureText(testLine);
+                
+                if (metrics.width > maxWidth && i > 0) {
+                    tempCtx.fillText(line, tempCanvas.width / 2, y);
+                    line = words[i] + ' ';
+                    y += 24;
+                } else {
+                    line = testLine;
+                }
+            }
+            tempCtx.fillText(line, tempCanvas.width / 2, y);
+            
+            // Draw center line
+            tempCtx.beginPath();
+            tempCtx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
+            tempCtx.moveTo(tempCanvas.width / 2, 60);
+            tempCtx.lineTo(tempCanvas.width / 2, tempCanvas.height);
+            tempCtx.stroke();
+            
+            // Copy the drawing - scale down from the high-DPI canvas
+            tempCtx.drawImage(
+                canvas, 
+                0, 0, canvas.width, visibleHeight * dpr,
+                0, 60, tempCanvas.width, visibleHeight
+            );
+            
+            // Add attribution
+            tempCtx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            tempCtx.font = '12px Arial';
+            tempCtx.textAlign = 'right';
+            tempCtx.fillText('Created by Aaron Shi', tempCanvas.width - 10, tempCanvas.height - 10);
+            
+            // Create download link
+            const link = document.createElement('a');
+            link.download = 'dictation-practice.png';
+            link.href = tempCanvas.toDataURL('image/png');
+            link.click();
+        });
+        
+        // Close modal when clicking outside
+        window.addEventListener('click', (e) => {
+            if (e.target === addSentenceModal) {
+                addSentenceModal.style.display = 'none';
+            }
+        });
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'939d576006e14a07',t:'MTc0NjI0OTk2My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
