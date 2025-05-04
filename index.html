@@ -16,7 +16,7 @@
         .canvas-container {
             position: relative;
             width: 100%;
-            height: calc(100vh - 180px);
+            height: calc(100vh - 220px);
             overflow: auto;
             background-color: white;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -85,13 +85,65 @@
         .pen-color.active {
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
         }
+        
+        .attribution {
+            display: inline-flex;
+            align-items: center;
+            color: #4b5563;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        .attribution:hover {
+            color: #2563eb;
+        }
+        
+        .attribution svg {
+            margin-left: 5px;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 640px) {
+            .controls-container {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .controls-group {
+                margin-bottom: 0.5rem;
+                width: 100%;
+            }
+            
+            .btn-group {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+            }
+            
+            .btn-group button, .btn-group select {
+                flex: 1;
+                min-width: 0;
+                white-space: nowrap;
+            }
+            
+            .tools-group {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: space-between;
+                gap: 0.5rem;
+            }
+            
+            .countdown {
+                font-size: 80px;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="min-h-screen flex flex-col">
         <header class="bg-blue-600 text-white p-4">
-            <div class="container mx-auto flex flex-col md:flex-row justify-between items-center">
-                <h1 class="text-2xl font-bold mb-2 md:mb-0">Dictation Practice</h1>
+            <div class="container mx-auto flex flex-col sm:flex-row justify-between items-center">
+                <h1 class="text-2xl font-bold mb-2 sm:mb-0">Dictation Practice</h1>
                 <div class="flex flex-wrap gap-2">
                     <button id="revealBtn" class="bg-white text-blue-600 px-4 py-2 rounded hover:bg-blue-100 transition">Reveal Sentence</button>
                     <button id="listenAgainBtn" class="bg-white text-blue-600 px-4 py-2 rounded hover:bg-blue-100 transition">Listen Again</button>
@@ -102,8 +154,9 @@
         
         <div class="container mx-auto p-4 flex-grow flex flex-col">
             <div class="bg-white rounded-lg p-4 mb-4 shadow">
-                <div class="flex flex-wrap gap-3 justify-between items-center">
-                    <div class="flex gap-2">
+                <div class="controls-container flex flex-col gap-3">
+                    <!-- First row - Main controls -->
+                    <div class="controls-group btn-group flex flex-wrap gap-2">
                         <button id="playBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
                             Play Random Sentence
                         </button>
@@ -116,9 +169,10 @@
                         </button>
                     </div>
                     
-                    <div class="flex items-center gap-3">
+                    <!-- Second row - Tools -->
+                    <div class="controls-group tools-group flex flex-wrap items-center gap-3">
                         <div class="flex items-center">
-                            <label for="speedRange" class="mr-2">Speed:</label>
+                            <label for="speedRange" class="mr-2 whitespace-nowrap">Speed:</label>
                             <input type="range" id="speedRange" min="0.5" max="2" step="0.1" value="1" class="w-24">
                             <span id="speedValue" class="ml-2">1.0x</span>
                         </div>
@@ -146,7 +200,12 @@
                 <div class="center-line"></div>
             </div>
             
-            <div class="text-right text-sm text-gray-500 mt-2">Created by Aaron Shi.</div>
+            <div class="text-right text-sm mt-2">
+                <a href="https://sites.google.com/view/aaronshi" target="_blank" rel="noopener noreferrer" class="attribution">
+                    Created by Aaron Shi
+                    <img src="https://alittlemoreenglish.weebly.com/uploads/2/6/6/3/26638990/favicon-32x32_orig.png" alt="Aaron Shi" width="15" height="15">
+                </a>
+            </div>
         </div>
     </div>
     
@@ -512,11 +571,22 @@
                 0, 60, tempCanvas.width, visibleHeight
             );
             
-            // Add attribution
+            // Add attribution with SVG icon
             tempCtx.fillStyle = 'rgba(0, 0, 0, 0.5)';
             tempCtx.font = '12px Arial';
             tempCtx.textAlign = 'right';
-            tempCtx.fillText('Created by Aaron Shi', tempCanvas.width - 10, tempCanvas.height - 10);
+            tempCtx.fillText('Created by Aaron Shi', tempCanvas.width - 25, tempCanvas.height - 10);
+            
+            // Draw a small circle icon
+            tempCtx.beginPath();
+            tempCtx.arc(tempCanvas.width - 15, tempCanvas.height - 12, 7, 0, Math.PI * 2);
+            tempCtx.stroke();
+            tempCtx.beginPath();
+            tempCtx.arc(tempCanvas.width - 15, tempCanvas.height - 12, 4, 0, Math.PI * 2);
+            tempCtx.stroke();
+            tempCtx.beginPath();
+            tempCtx.arc(tempCanvas.width - 15, tempCanvas.height - 12, 2, 0, Math.PI * 2);
+            tempCtx.fill();
             
             // Create download link
             const link = document.createElement('a');
@@ -531,6 +601,14 @@
                 addSentenceModal.style.display = 'none';
             }
         });
+        
+        // Handle mobile keyboard adjustments
+        window.addEventListener('resize', () => {
+            // This helps with mobile keyboard appearance
+            const viewportHeight = window.innerHeight;
+            document.querySelector('.canvas-container').style.height = 
+                `calc(${viewportHeight}px - 220px)`;
+        });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'939d576006e14a07',t:'MTc0NjI0OTk2My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93a6500365314a54',t:'MTc0NjM0NDAzNC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
